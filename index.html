@@ -1,0 +1,89 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<script src="http://10.20.70.152/chatTest/htmlEntities.js"></script>
+<script src="http://10.20.70.152/chatTest/htmlTranslationTable.js"></script>
+<script>
+	var socket = io.connect('http://10.20.70.152:8080');
+	var usrname = "";
+	function Conn() {
+		usrname = htmlentities(usrname);
+		usrnamestripped = usrname.replace(/ /g,'');
+		if(usrnamestripped == "") {
+			usrname = getName();
+			Conn();
+		} else {
+			// on connection to server, ask for user's name with an anonymous callback
+			socket.on('connect', function(){
+				// call the server-side function 'adduser' and send one parameter (value of prompt)
+				socket.emit('adduser', htmlentities(usrname));
+				// switch content after connecting
+				document.getElementById('content').style.display='inline';
+				document.getElementById('connecting').style.display='none';
+			});
+		}
+	}
+
+	function getName() {
+		var n = "";
+		n = prompt("What is your name?");
+		return n;
+	}
+
+	// listener, whenever the server emits 'updatechat', this updates the chat body
+	socket.on('updatechat', function (username, data) {
+		$('#conversation').append('<b>'+ htmlentities(username) + ':</b> ' + htmlentities(data) + '<br>');
+		var objDiv = document.getElementById("conversation");
+		objDiv.scrollTop = objDiv.scrollHeight;	
+	});
+
+	// listener, whenever the server emits 'updateusers', this updates the username list
+	socket.on('updateusers', function(data) {
+		$('#users').empty();
+		$.each(data, function(key, value) {
+			$('#users').append('<div>' + key + '</div>');
+		});
+	});
+
+	// on load of page
+	$(function(){
+		Conn();
+		document.getElementById('content').style.display='none';
+		
+		// when the client clicks SEND
+		$('#datasend').click( function() {
+			var message = $('#data').val();
+			$('#data').val('');
+			// tell server to execute 'sendchat' and send along one parameter
+			if(message != "") {
+				socket.emit('sendchat', message);
+				document.getElementById('data').focus();
+			}
+		});
+
+		// when the client hits ENTER on their keyboard
+		$('#data').keypress(function(e) {
+			if(e.which == 13) {
+				$(this).blur();
+				$('#datasend').focus().click();
+				document.getElementById('data').focus();
+			}
+		});
+	});
+
+</script>
+<body style="background:url(http://10.20.70.152/chatTest/back.jpg)">
+<div id="connecting">Connecting....</div>
+<div id="content" style="display:none">
+SERVER: TRY TO TAKE ME DOWN!!!
+	<div style="float:left;width:200px;;height:500px;padding:10px;">
+		<b>USERS</b>
+		<div id="users" style="padding:5px;border:1px solid black; overflow:auto;"></div>
+	</div>
+	<div style="float:left; width:750px;padding:20px;">
+		<div id="conversation" style=" height:500px; overflow:auto; max-height:750px;"></div>
+		<input id="data" style="width:350px;" />
+		<input type="button" id="datasend" value="send" /> <br>
+		(limit 100 chars)
+	</div>
+</div>
+</body>
