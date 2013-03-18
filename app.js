@@ -8,6 +8,20 @@ app.get('/', function (req, res) {
   res.sendfile(__dirname + '/index.html');
 });
 
+//set date-time vars
+var currentTime = new Date();
+var month = currentTime.getMonth() + 1;
+var day = currentTime.getDate();
+var year = currentTime.getFullYear();
+var hours = currentTime.getHours();
+var minutes = currentTime.getMinutes();
+var seconds = currentTime.getSeconds();
+if(minutes < 10) {
+	minutes = "0" + minutes;
+}
+var dateStamp = month + "-" + day + "-" + year;
+var timeStamp = hours + ":" + minutes + ":" + seconds;
+
 // usernames which are currently connected to the chat
 var usernames = {};
 io.sockets.on('connection', function (socket) {
@@ -15,7 +29,7 @@ io.sockets.on('connection', function (socket) {
 	// when the client emits 'sendchat', this listens and executes
 	socket.on('sendchat', function (data) {
 		// we tell the client to execute 'updatechat' with 2 parameters
-		io.sockets.emit('updatechat', socket.username, data.substring(0,100));
+		io.sockets.emit('updatechat', "(" + timeStamp + ")" + socket.username, data.substring(0,100));
 	});
 
 	// when the client emits 'adduser', this listens and executes
